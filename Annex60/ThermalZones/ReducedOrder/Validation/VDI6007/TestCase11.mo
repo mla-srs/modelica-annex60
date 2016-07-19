@@ -27,12 +27,10 @@ model TestCase11 "VDI 6007 Test Case 11 model"
     AExt={10.5},
     extWallRC(thermCapExt(each der_T(fixed=true))),
     T_start=295.15,
-    intWallRC(thermCapInt(each der_T(fixed=true))))
-    "Thermal zone"
+    intWallRC(thermCapInt(each der_T(fixed=true)))) "Thermal zone"
     annotation (Placement(transformation(extent={{44,-2},{92,34}})));
   Modelica.Thermal.HeatTransfer.Sources.FixedTemperature preTem(
-    T=295.15)
-    "Outdoor air temperature"
+    T=295.15) "Outdoor air temperature"
     annotation (Placement(transformation(extent={{8,-6},{20,6}})));
   Modelica.Thermal.HeatTransfer.Components.Convection theConWall
     "Outdoor convective heat transfer"
@@ -43,8 +41,7 @@ model TestCase11 "VDI 6007 Test Case 11 model"
         25200,1000; 28800,1000; 32400,1000; 36000,1000; 39600,1000; 43200,1000;
         46800,1000; 50400,1000; 54000,1000; 57600,1000; 61200,1000; 64800,1000;
         64800,0; 68400,0; 72000,0; 75600,0; 79200,0; 82800,0; 86400,0],
-    columns={2})
-    "Table with internal gains"
+    columns={2}) "Table with internal gains"
     annotation (Placement(transformation(extent={{6,-96},{22,-80}})));
   Modelica.Blocks.Sources.CombiTimeTable reference(
     tableOnFile=false,
@@ -72,8 +69,7 @@ model TestCase11 "VDI 6007 Test Case 11 model"
         5148000,27.2,-500,-500; 5151600,27.3,-500,-500; 5155200,27.4,-500,-500;
         5158800,27.5,-500,-500; 5162400,27.6,-500,-500; 5166000,27,-500,-500;
         5169600,26.9,-500,-500; 5173200,26.7,-500,-500; 5176800,26.6,-500,-500;
-        5180400,26.5,-500,-500; 5184000,26.4,-500,-500])
-    "Reference results"
+        5180400,26.5,-500,-500; 5184000,26.4,-500,-500]) "Reference results"
     annotation (Placement(transformation(extent={{80,80},{100,100}})));
   Modelica.Thermal.HeatTransfer.Sources.PrescribedHeatFlow machinesRad
     "Radiative heat flow machines"
@@ -85,15 +81,13 @@ model TestCase11 "VDI 6007 Test Case 11 model"
     extent={{-4,-4},{4,4}},
     rotation=90,
     origin={30,-18})));
-  Modelica.Blocks.Sources.Constant const(k=0)
-    "Solar radiation"
+  Modelica.Blocks.Sources.Constant const(k=0) "Solar radiation"
     annotation (Placement(transformation(extent={{20,26},{30,36}})));
   Modelica.Thermal.HeatTransfer.Sources.PrescribedHeatFlow heat
     "Ideal heater with limit"
     annotation (Placement(transformation(extent={{46,-44},{66,-24}})));
   Modelica.Thermal.HeatTransfer.Sources.PrescribedHeatFlow cool(
-    T_ref=295.15)
-    "Ideal cooler with limit"
+    T_ref=295.15) "Ideal cooler with limit"
     annotation (Placement(transformation(extent={{2,76},{22,96}})));
   Modelica.Blocks.Sources.CombiTimeTable setTemp(
     extrapolation=Modelica.Blocks.Types.Extrapolation.Periodic,
@@ -108,8 +102,7 @@ model TestCase11 "VDI 6007 Test Case 11 model"
   Modelica.Blocks.Math.UnitConversions.From_degC from_degC
     "Convert set temperature from degC to Kelvin"
     annotation (Placement(transformation(extent={{-74,18},{-62,30}})));
-  Modelica.Blocks.Math.Gain gainHea(k=500)
-    "Gain for heating"
+  Modelica.Blocks.Math.Gain gainHea(k=500) "Gain for heating"
     annotation (Placement(transformation(extent={{-16,-40},{-4,-28}})));
   Controls.Continuous.LimPID conHeaCoo(
     yMin=-1,
@@ -117,28 +110,22 @@ model TestCase11 "VDI 6007 Test Case 11 model"
     controllerType=Modelica.Blocks.Types.SimpleController.PI,
     yMax=1,
     k=0.1,
-    Ti=1.2)
-    "Heating and cooling controller"
+    Ti=1.2) "Heating and cooling controller"
     annotation (Placement(transformation(extent={{-50,16},{-34,32}})));
-  Modelica.Blocks.Math.Gain gainCoo(k=500)
-    "Gain for cooling"
+  Modelica.Blocks.Math.Gain gainCoo(k=500) "Gain for cooling"
     annotation (Placement(transformation(extent={{-16,80},{-4,92}})));
-  Modelica.Blocks.Logical.Switch switchCoo
-    "Switch to limit cooling power"
+  Modelica.Blocks.Logical.Switch switchCoo "Switch to limit cooling power"
     annotation (Placement(transformation(extent={{-46,81},{-36,91}})));
   Modelica.Blocks.Logical.Hysteresis hysteresis(
     uLow=-0.0000001,
     uHigh=0.0000001,
-    y(start=true))
-    "Threshold for switching between heating and cooling"
+    y(start=true)) "Threshold for switching between heating and cooling"
     annotation (Placement(transformation(
         extent={{-5,-5},{5,5}},
         origin={-67,51})));
-  Modelica.Blocks.Sources.Constant DefPow(k=0)
-    "Default power"
+  Modelica.Blocks.Sources.Constant DefPow(k=0) "Default power"
     annotation (Placement(transformation(extent={{-90,-4},{-82,4}})));
-  Modelica.Blocks.Logical.Switch switchHea
-    "Switch to limit heating power"
+  Modelica.Blocks.Logical.Switch switchHea "Switch to limit heating power"
     annotation (Placement(transformation(extent={{-44,-39},{-34,-29}})));
   Modelica.Thermal.HeatTransfer.Sensors.HeatFlowSensor heatFlowSensor
     "Sensor for ideal heater"
@@ -146,8 +133,7 @@ model TestCase11 "VDI 6007 Test Case 11 model"
   Modelica.Thermal.HeatTransfer.Sensors.HeatFlowSensor coolFlowSensor
     "Sensor for ideal cooler"
     annotation (Placement(transformation(extent={{20,64},{8,76}})));
-  Modelica.Blocks.Math.Add add(k1=1, k2=-1)
-    "Addition for mean of results"
+  Modelica.Blocks.Math.Add add(k1=1, k2=-1) "Addition for mean of results"
     annotation (Placement(transformation(extent={{40,60},{60,80}})));
   BaseClasses.AssertEqualityThreePeriods assEqu(
     endTime=86400,
@@ -156,26 +142,21 @@ model TestCase11 "VDI 6007 Test Case 11 model"
     threShold=1.5,
     startTime=3600,
     startTime2=781200,
-    startTime3=5101200)
-    "Checks validation criteria"
+    startTime3=5101200) "Checks validation criteria"
     annotation (Placement(transformation(extent={{200,60},{220,80}})));
   Modelica.Blocks.Math.Mean mean(f=1/3600)
     "Hourly mean of indoor air temperature"
     annotation (Placement(transformation(extent={{150,70},{170,90}})));
-  Modelica.Blocks.Logical.Switch switchMea
-    "Switch to guess values"
+  Modelica.Blocks.Logical.Switch switchMea "Switch to guess values"
     annotation (Placement(transformation(extent={{140,119},{160,140}})));
-  Modelica.Blocks.Logical.Not not1
-    "Logical not"
+  Modelica.Blocks.Logical.Not not1 "Logical not"
     annotation (Placement(transformation(extent={{20,120},{40,140}})));
-  Modelica.Blocks.Logical.Timer timer
-    "Timer since the control mode changed"
+  Modelica.Blocks.Logical.Timer timer "Timer since the control mode changed"
     annotation (Placement(transformation(extent={{60,120},{80,140}})));
   Modelica.Blocks.Logical.LessEqualThreshold thr(threshold=60)
     "Threshold to measure 60 seconds"
     annotation (Placement(transformation(extent={{100,120},{120,140}})));
-  Modelica.Blocks.Logical.Change cha
-    "Outputs true if the input changes"
+  Modelica.Blocks.Logical.Change cha "Outputs true if the input changes"
     annotation (Placement(transformation(extent={{-20,120},{0,140}})));
 equation
   connect(theConWall.fluid, preTem.port)

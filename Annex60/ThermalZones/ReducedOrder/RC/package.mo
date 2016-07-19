@@ -1,11 +1,10 @@
 within Annex60.ThermalZones.ReducedOrder;
-package RC
-  "Package with reduced order thermal zones based on VDI 6007 Part 1"
+package RC "Package with reduced order thermal zones based on VDI 6007 Part 1"
   extends Modelica.Icons.VariantsPackage;
+
 
   package UsersGuide "User's Guide"
     extends Modelica.Icons.Information;
-
 
     annotation (Documentation(info="<html>
   <p>
@@ -219,6 +218,7 @@ package RC
   Simulation Association</i>, p. 339-346, Hyderabad, India. Dec. 7-9, 2015. </p>
   </html>"));
   end UsersGuide;
+
 
 annotation (Documentation(info="<html>
 <p>This package contains the core of Reduced Order Models (ROM) that dynamically
