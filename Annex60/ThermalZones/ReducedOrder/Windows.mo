@@ -1,7 +1,7 @@
 within Annex60.ThermalZones.ReducedOrder;
 package Windows "This Package calculates solar gain through windows"
   extends Modelica.Icons.VariantsPackage;
-  package BaseClasses "BaseClasses for VDI6007"
+  package BaseClasses "BaseClasses for Windows"
     extends Modelica.Icons.BasesPackage;
 
     model SkylineShadowing
@@ -12,7 +12,7 @@ package Windows "This Package calculates solar gain through windows"
       import Modelica.Constants.pi;
       parameter Integer n(min = 1) "Number of corner points"
           annotation(dialog(group="skyline"));
-      parameter Modelica.SIunits.Angle[n] alpha(displayUnit="deg") "Azimuth of corner points, 0<(alpha(i+1)-alpha(i))<180°,
+      parameter Modelica.SIunits.Angle[n] alpha(displayUnit="deg") "Azimuth of corner points, sorted from north to east to south to west,
      azi=-90 degree if surface outward unit normal points toward east; azi=0 if it points toward south"
           annotation(dialog(group="skyline"));
       parameter Modelica.SIunits.Height[n] deltaH
@@ -52,9 +52,9 @@ package Windows "This Package calculates solar gain through windows"
       end for;
       //Calculating altLim
       for i in 1:(n-1) loop
-        X[i] = pi-Y[i]-(alpha[i+1]-alpha[i]);
+        X[i] = pi-Y[i]-(to_northAzimuth(alpha[i+1])-to_northAzimuth(alpha[i]));
         Y[i] = Modelica.Math.atan((Modelica.Math.tan(gamma[i+1])*Modelica.Math.sin(to_northAzimuth(alpha[i+1])-to_northAzimuth(alpha[i])))/
-        (Modelica.Math.tan(gamma[i])-Modelica.Math.tan(gamma[i+1])*Modelica.Math.cos(alpha[i+1]-alpha[i])));
+        (Modelica.Math.tan(gamma[i])-Modelica.Math.tan(gamma[i+1])*Modelica.Math.cos(to_northAzimuth(alpha[i+1])-to_northAzimuth(alpha[i]))));
         if gap[i] then
           altLimi[i]=-pi/2;
         else
@@ -83,7 +83,7 @@ In the example above it should be set {false,false,true,false,false} for the pai
 </html>"));
     end SkylineShadowing;
 
-    block VentilationHeat "heat input due to ventilation"
+    block VentilationHeat "heat input due to ventilation with closed sunblind"
       extends Modelica.Blocks.Icons.Block;
       import
         Annex60.ThermalZones.ReducedOrder.Windows.BaseClasses.Conversions.to_surfaceTiltVDI;
@@ -324,7 +324,7 @@ The model considers additional heat input in the event of window ventilation and
                                                                         Diagram(
             coordinateSystem(preserveAspectRatio=false)),
         Documentation(info="<html>
-<p>This Model considers self-shadowing of windows due to projections for direct radiation based on VDI 6007 part 3. It calculates what part of the windowarea is effective. </p>
+<p>This model considers self-shadowing of windows due to projections for direct radiation based on VDI 6007 part 3. It calculates what part of the windowarea is effective. </p>
 <p><img alt=\"SelfShadowing\" src=\"modelica://Annex60/Resources/Images/ThermalZones/ReducedOrder/Windows/BaseClasses/SelfShadowing.png\" height=\"400\"/></p>
 <p>The image above shows how the parameters should be set and is based on VDI 6007 part 3. Parameters with Index 2 are alligned on the other side</p>
 <p>(i.e.: dRig is the distance between the projection and the window on the right handside, dBel is the distance between the projection below and the window). eh and ev are calculated within the model and are shown for demonstration.</p>
@@ -445,7 +445,7 @@ The model considers additional heat input in the event of window ventilation and
 </html>", info="<html>
 This model calculates the activation and deactivation times of the illumination and gives it back as the Boolean \"Illumination\".
 It is based on VDI 6007 part 3. <br>
-The total solar energy entering the room, which is calculated by <a href=\"modelica://vdi6007.Window\">vdi6007.window</a>, is compared to a limit value based on the parameters.
+The total solar energy entering the room, which can be calculated by <a href=\"Windows.Window\">Window</a> or <a href=\"Windows.ShadedWindow\">ShadedWindow</a>, is compared to a limit value based on the parameters.
   <h4>References</h4>
   <p>VDI. German Association of Engineers Guideline VDI 6007-3
   June 2015. Calculation of transient thermal response of rooms
@@ -522,8 +522,6 @@ The total solar energy entering the room, which is calculated by <a href=\"model
 <p>This model calculates the heat input in the room due to illumination.</p>
 </html>"));
     end HeatIllumination;
-
-
 
     model HVisible
       "Calculates the solar energy entering the room in the visible area"
@@ -788,7 +786,7 @@ The total solar energy entering the room, which is calculated by <a href=\"model
 </html>"));
     end HWindow;
 
-    model Window
+    model Window "Calculation of solar energy transmitted through windows"
       import vdi6007 = Annex60.ThermalZones.ReducedOrder.Windows;
       parameter Integer n(min = 1) "number of windows"
         annotation(dialog(group="window"));
@@ -1031,6 +1029,7 @@ The total solar energy entering the room, which is calculated by <a href=\"model
     end Window;
 
     model ShadedWindow
+      "Calculation of solar energy transmitted through windows considering shadowing."
       parameter Integer n(min = 1) "number of windows"
         annotation(dialog(group="window"));
       parameter Modelica.SIunits.CoefficientOfHeatTransfer UWin
@@ -1057,35 +1056,35 @@ The total solar energy entering the room, which is calculated by <a href=\"model
         "Surface tilt. til=90 degree for walls; til=0 for ceilings; til=180 for roof"
         annotation (Dialog(group="window"));
       parameter Modelica.SIunits.Length b[n] "width of window"
-        annotation (Dialog(group="Window parameter",groupImage="modelica://vdi6007/Resources/Icons/SelfShadowing.png"));
+        annotation (Dialog(group="window"));
       parameter Modelica.SIunits.Height h[n] "height of window"
-        annotation (Dialog(group="Window parameter"));
+        annotation (Dialog(group="window"));
       parameter Modelica.SIunits.Length bLef[n] "window projection left"
-        annotation (Dialog(group="Window parameter"));
+        annotation (Dialog(group="window"));
       parameter Modelica.SIunits.Length bRig[n] "window projection right"
-        annotation (Dialog(group="Window parameter"));
+        annotation (Dialog(group="window"));
       parameter Modelica.SIunits.Length dLef[n]
         "distance between projection (left) and window"
-        annotation (Dialog(group="Window parameter"));
+        annotation (Dialog(group="window"));
       parameter Modelica.SIunits.Length dRig[n]
         "distance between projection (right) and window"
-        annotation (Dialog(group="Window parameter"));
+        annotation (Dialog(group="window"));
       parameter Modelica.SIunits.Length bAbo[n] "window projection above"
-        annotation (Dialog(group="Window parameter"));
+        annotation (Dialog(group="window"));
       parameter Modelica.SIunits.Length bBel[n] "window projection below"
-        annotation (Dialog(group="Window parameter"));
+        annotation (Dialog(group="window"));
       parameter Modelica.SIunits.Length dAbo[n]
         "distance between projection (above) and window"
-        annotation (Dialog(group="Window parameter"));
+        annotation (Dialog(group="window"));
       parameter Modelica.SIunits.Length dBel[n]
         "distance between projection (below) and window"
-        annotation (Dialog(group="Window parameter"));
+        annotation (Dialog(group="window"));
       parameter Modelica.SIunits.Angle azi[n](displayUnit="degree")
         "Surface azimuth. azi=-90 degree if surface outward unit normal points toward east; azi=0 if it points toward south"
-        annotation (Dialog(group="Window parameter"));
+        annotation (Dialog(group="window"));
       parameter Integer nCorPoi(min = 1) "Number of corner points"
           annotation(dialog(group="skyline"));
-      parameter Modelica.SIunits.Angle[nCorPoi] alpha(displayUnit="deg") "Azimuth of corner points, 0<(alpha(i+1)-alpha(i))<180°,
+      parameter Modelica.SIunits.Angle[nCorPoi] alpha(displayUnit="deg") "Azimuth of corner points, sorted from north to east to south to west,
      azi=-90 degree if surface outward unit normal points toward east; azi=0 if it points toward south"
           annotation(dialog(group="skyline"));
       parameter Modelica.SIunits.Height[nCorPoi] deltaH
@@ -1307,7 +1306,6 @@ The total solar energy entering the room, which is calculated by <a href=\"model
 </html>"));
     end ShadedWindow;
 
-
     package Conversions
       "This package provides conversions to translate dimensions from Annex60 definition to the definition of VDI 6007."
 
@@ -1321,7 +1319,7 @@ The total solar energy entering the room, which is calculated by <a href=\"model
         alpha:=pi+azi;
 
         annotation (Documentation(info="<html>
-This Function converts the azimuth based on <a href=\"Annex60\">Annex60</a> to the north based definition.
+<p>This Function converts the azimuth based on <a href=\"Annex60\">Annex60</a> to the north based definition.</p>
 </html>",     revisions="<html>
 <ul>
 <li>June 07, 2016,&nbsp; by Stanley Risch:<br>Implemented. </li>
@@ -1376,10 +1374,17 @@ This function converts the inclination of a surface from the <a href=\"Annex60\"
                 lineColor={191,0,0},
                 fillColor={191,0,0},
                 fillPattern=FillPattern.Solid)}),                      Diagram(
-              coordinateSystem(preserveAspectRatio=false)));
+              coordinateSystem(preserveAspectRatio=false)),
+          Documentation(info="<html>
+<p>This model converts the direct irradiation on a horizontal surface to the direct irradiation on a normal surface. Therefore it needs the solar altitude angle.</p>
+</html>", revisions="<html>
+<ul>
+<li>June 30, 2016,&nbsp; by Stanley Risch:<br>Implemented. </li>
+</html>"));
       end to_HDirNor;
 
       model HDif_toClearCovered
+        "Splits the total diffuse irradiation in diffuse irradiation at clear and covered sky"
         extends Modelica.Blocks.Icons.Block;
 
         Modelica.Blocks.Interfaces.RealInput HDifHor( quantity=
@@ -1433,12 +1438,30 @@ This function converts the inclination of a surface from the <a href=\"Annex60\"
                 lineColor={191,0,0},
                 fillColor={191,0,0},
                 fillPattern=FillPattern.Solid)}),                      Diagram(
-              coordinateSystem(preserveAspectRatio=false)));
+              coordinateSystem(preserveAspectRatio=false)),
+          Documentation(info="<html>
+<p>This model calculates the diffuse irradiation at clear and covered sky out of the total diffuse irradiation. Therefore it uses the total sky cover.</p>
+</html>", revisions="<html>
+<ul>
+<li>June 30, 2016,&nbsp; by Stanley Risch:<br>Implemented. </li>
+</html>"));
       end HDif_toClearCovered;
+      annotation (Documentation(info="<html>
+<p>This package contains the conversions needed to use the equations of VDI6007 with inputs and parameters with <code>Annex60</code> definition.</p>
+</html>", revisions="<html>
+<ul>
+<li>June 30, 2016,&nbsp; by Stanley Risch:<br>Implemented. </li>
+</html>"));
     end Conversions;
+    annotation (Documentation(info="<html>
+<p>The BaseClasses package provides the basic models for the window calculations.<\\p>
+</html>", revisions="<html>
+<ul>
+<li>July 1 2016,&nbsp; by Stanley Risch:<br>Implemented. </li>
+</html>"));
   end BaseClasses;
 
-  package Examples "Examples for VDI6007-3"
+  package Examples "Examples for the windows submodels"
     extends Modelica.Icons.ExamplesPackage;
 
     model Illumination "Testmodel for Illumination"
@@ -1446,6 +1469,7 @@ This function converts the inclination of a surface from the <a href=\"Annex60\"
       extends Modelica.Icons.Example;
 
       Windows.BaseClasses.HeatIllumination heatIllumination(HIll1=120, HIll2=240)
+        "Heat input into the room due to the illumination"
         annotation (Placement(transformation(extent={{76,-10},{96,10}})));
       Windows.BaseClasses.Illumination illumination(
         D=0.27,
@@ -1457,17 +1481,20 @@ This function converts the inclination of a surface from the <a href=\"Annex60\"
         A={5.13},
         T_L={0.72},
         til={1.5707963267949})
+        "Determining the switch times for the illumination in the room"
         annotation (Placement(transformation(extent={{52,-10},{72,10}})));
       Windows.SolarGain.CorrectionGTaueDoublePane CorGTaue(
         n=1,
         UWin=1.4,
-        til={90}) annotation (Placement(transformation(extent={{18,-42},{38,-22}})));
+        til={90}) "Correction values for non-vertical non-parallel irradiation"
+                  annotation (Placement(transformation(extent={{18,-42},{38,-22}})));
       Windows.BaseClasses.Sunblind sunblind(lim=200)
+        "Calculates if the sunblind of the window is active"
         annotation (Placement(transformation(extent={{-16,-64},{-6,-54}})));
       BoundaryConditions.SolarIrradiation.DiffusePerez HDifTil(
         azi=0,
         til=1.5707963267949,
-        lat=0.86393797973719)
+        lat=0.86393797973719) "Diffuse irradiation on the window"
         annotation (Placement(transformation(extent={{-60,-18},{-40,2}})));
       Windows.Window window(
         n=1,
@@ -1481,7 +1508,7 @@ This function converts the inclination of a surface from the <a href=\"Annex60\"
         lim=200,
         azi={0},
         lat=0.86393797973719,
-        til={1.5707963267949})
+        til={1.5707963267949}) "Window facing the south in a wall"
         annotation (Placement(transformation(extent={{-10,24},{10,44}})));
       BoundaryConditions.WeatherData.ReaderTMY3 weaDat(
         filNam="modelica://Annex60/Resources/weatherdata/USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.mos")
@@ -1489,7 +1516,7 @@ This function converts the inclination of a surface from the <a href=\"Annex60\"
       BoundaryConditions.SolarIrradiation.DirectTiltedSurface HDirTil(
         azi=0,
         til=1.5707963267949,
-        lat=0.86393797973719)
+        lat=0.86393797973719) "Direct irradiation on the surface"
         annotation (Placement(transformation(extent={{-66,-64},{-46,-44}})));
     equation
       connect(illumination.Illumination, heatIllumination.Illumination)
@@ -1498,9 +1525,9 @@ This function converts the inclination of a surface from the <a href=\"Annex60\"
             points={{37,-24},{40,-24},{40,0},{51,0}}, color={0,0,127}));
       connect(CorGTaue.CorTaue_DifCov, illumination.CorTaue_DifCov) annotation (
          Line(points={{37,-26},{44,-26},{44,-6},{51,-6}}, color={0,0,127}));
-      connect(HDifTil.H, sunblind.HDifTil) annotation (Line(points={{-39,-8},{
-              -32,-8},{-32,-42},{-32,-44},{-32,-56},{-24,-56},{-24,-56},{-20,
-              -56},{-20,-56.1},{-16.5,-56.1}}, color={0,0,127}));
+      connect(HDifTil.H, sunblind.HDifTil) annotation (Line(points={{-39,-8},{-32,
+              -8},{-32,-42},{-32,-44},{-32,-56},{-24,-56},{-20,-56},{-20,-56.1},{-16.5,
+              -56.1}},                         color={0,0,127}));
       connect(sunblind.sunscreen, CorGTaue.sunscreen[1]) annotation (Line(
             points={{-5.5,-59},{-5.5,-58},{-6,-58},{-4,-58},{16,-58},{16,-34},{
               19,-34}}, color={255,0,255}));
@@ -1527,7 +1554,7 @@ This function converts the inclination of a surface from the <a href=\"Annex60\"
                 100}})),
         Documentation(info="<html>
   <p>This example shows the application of
-  <a href=\"vdi6007.BaseClasses.Illumination\">Illumination</a>.
+  <a href=\"Windows.BaseClasses.Illumination\">Illumination</a>.
    For solar radiation, the example relies on the standard
   weather file in Annex60.</p>
   <p>The idea of the example is to show a typical application of all
@@ -1545,7 +1572,7 @@ This function converts the inclination of a surface from the <a href=\"Annex60\"
 </html>"));
     end Illumination;
 
-    model Window
+    model Window "Testmodel for Window"
       import vdi6007 = Annex60.ThermalZones.ReducedOrder.Windows;
         extends Modelica.Icons.Example;
 
@@ -1565,6 +1592,7 @@ This function converts the inclination of a surface from the <a href=\"Annex60\"
         lat=0.86393797973719,
         til={1.5707963267949,1.5707963267949},
         azi={0,1.5707963267949})
+        "Two windows: One facing south, one facing west"
         annotation (Placement(transformation(extent={{12,-10},{32,10}})));
     equation
       connect(weaDat.weaBus, window.weaBus) annotation (Line(
@@ -1593,9 +1621,9 @@ This function converts the inclination of a surface from the <a href=\"Annex60\"
 </html>"));
     end Window;
 
-    model ShadedWindow
+    model ShadedWindow "Testmodel for ShadedWindow"
       import Annex60.ThermalZones.ReducedOrder.Windows;
-        extends Modelica.Icons.Example;
+      extends Modelica.Icons.Example;
 
       BoundaryConditions.WeatherData.ReaderTMY3 weaDat(
         filNam="modelica://Annex60/Resources/weatherdata/USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.mos")
@@ -1627,7 +1655,9 @@ This function converts the inclination of a surface from the <a href=\"Annex60\"
         gap={false,true,false},
         lat=0.86393797973719,
         til={1.5707963267949,1.5707963267949},
-        alpha={1.7453292519943,2.0943951023932,6.1086523819802,6.457718232379})
+        alpha={-0.34906585039887,0.34906585039887,1.7453292519943,
+            2.0943951023932})
+        "Two shaded windows: One facing south, one facing west."
         annotation (Placement(transformation(extent={{20,-12},{48,14}})));
     equation
       connect(weaDat.weaBus, shadedWindow.weaBus) annotation (Line(
@@ -1638,7 +1668,7 @@ This function converts the inclination of a surface from the <a href=\"Annex60\"
             coordinateSystem(preserveAspectRatio=false)),
         Documentation(info="<html>
   <p>This example shows the application of
-  <a href=\"vdi6007.ShadedWindow\">ShadedWindow</a>.
+  <a href=\"Windows.ShadedWindow\">ShadedWindow</a>.
    For solar radiation, the example relies on the standard
   weather file in Annex60.</p>
   <p>The idea of the example is to show a typical application of all
@@ -1656,8 +1686,8 @@ This function converts the inclination of a surface from the <a href=\"Annex60\"
 </html>"));
     end ShadedWindow;
 
-    model VentilationHeat
-        extends Modelica.Icons.Example;
+    model VentilationHeat "Testmodel for VentilationHeat"
+      extends Modelica.Icons.Example;
 
       BaseClasses.VentilationHeat ventilationHeat(
         d=0.1,
@@ -1666,25 +1696,31 @@ This function converts the inclination of a surface from the <a href=\"Annex60\"
         tau_e=0.1,
         rho_e=0.7125,
         til=1.5707963267949)
+        "Heat input due to ventilation with closed sunblind"
         annotation (Placement(transformation(extent={{56,-10},{76,10}})));
       BoundaryConditions.WeatherData.ReaderTMY3 weaDat(
         filNam="modelica://Annex60/Resources/weatherdata/USA_IL_Chicago-OHare.Intl.AP.725300_TMY3.mos")
         annotation (Placement(transformation(extent={{-100,-10},{-80,10}})));
       BoundaryConditions.SolarIrradiation.DiffusePerez HDifTil(
+        azi=0,
         til=1.5707963267949,
-        lat=0.86393797973719,
-        azi=0) annotation (Placement(transformation(extent={{-42,20},{-26,36}})));
+        lat=0.86393797973719) "Diffuse irradiation on the window"
+               annotation (Placement(transformation(extent={{-42,20},{-26,36}})));
       BoundaryConditions.SolarIrradiation.DirectTiltedSurface HDirTil(
+        azi=0,
         til=1.5707963267949,
-        lat=0.86393797973719,
-        azi=0) annotation (Placement(transformation(extent={{-42,-8},{-26,8}})));
-      BaseClasses.Sunblind sunblind(lim=200)
+        lat=0.86393797973719) "Direct solar irradiation on the window"
+               annotation (Placement(transformation(extent={{-42,-8},{-26,8}})));
+      BaseClasses.Sunblind sunblind(lim=200) "Sunblind of the window"
         annotation (Placement(transformation(extent={{-16,8},{-2,22}})));
       BoundaryConditions.SolarGeometry.BaseClasses.AltitudeAngle altAng
+        "Solar altitude angle"
         annotation (Placement(transformation(extent={{10,-20},{20,-10}})));
       BoundaryConditions.SolarGeometry.ZenithAngle zen(lat=0.86393797973719)
+        "Solar zenith angle"
         annotation (Placement(transformation(extent={{-2,-20},{8,-10}})));
-      BoundaryConditions.WeatherData.Bus weaBus annotation (Placement(
+      BoundaryConditions.WeatherData.Bus weaBus "Weather bus"
+                                                annotation (Placement(
             transformation(extent={{-70,38},{-38,68}}), iconTransformation(extent={{
                 -196,50},{-176,70}})));
       ThermalZones.ReducedOrder.Windows.Window window(
@@ -1699,9 +1735,10 @@ This function converts the inclination of a surface from the <a href=\"Annex60\"
         lim=200,
         azi={0},
         lat=0.86393797973719,
-        til={1.5707963267949})
+        til={1.5707963267949}) "Window facing south"
         annotation (Placement(transformation(extent={{56,-54},{76,-34}})));
       Modelica.Blocks.Math.Add add
+        "Total solar energy entering the room through the window"
         annotation (Placement(transformation(extent={{92,-4},{100,4}})));
     equation
       connect(altAng.zen, zen.y)
@@ -1764,7 +1801,7 @@ This function converts the inclination of a surface from the <a href=\"Annex60\"
             coordinateSystem(preserveAspectRatio=false)),
         Documentation(info="<html>
   <p>This example shows the application of
-  <a href=\"vdi6007.BaseClasses.VentilationHeat\">VentilationHeat</a>.
+  <a href=\"Windows.BaseClasses.VentilationHeat\">VentilationHeat</a>.
    For solar radiation, the example relies on the standard
   weather file in Annex60.</p>
   <p>The idea of the example is to show a typical application of all
@@ -1783,15 +1820,8 @@ This function converts the inclination of a surface from the <a href=\"Annex60\"
     end VentilationHeat;
   end Examples;
 
-  package Validation
+  package Validation "Collecion of validation models"
     extends Modelica.Icons.ExamplesPackage;
-
-
-
-
-
-
-
 
     model SkylineShadowingTest
       import Annex60;
@@ -1801,68 +1831,28 @@ This function converts the inclination of a surface from the <a href=\"Annex60\"
         skylineShadow(
         n=4,
         gap={false,true,false},
-        s={20,20,50,50},
         deltaH={5,5,100,100},
-        alpha={1.3962634015955,1.7453292519943,4.5378560551853,4.8869219055841})
-        annotation (Placement(transformation(extent={{30,48},{50,68}})));
+        s={20,20,20,20},
+        alpha={1.3962634015955,1.7453292519943,-1.3962634015955,-1.7453292519943})
+        "Shadow due to buildings on the west and east side"
+        annotation (Placement(transformation(extent={{28,-10},{48,10}})));
 
-      Modelica.Blocks.Sources.Sine solAziSine(             amplitude=2*Modelica.Constants.pi, freqHz=
-            0.25)
-        annotation (Placement(transformation(extent={{-46,48},{-26,68}})));
-      Annex60.ThermalZones.ReducedOrder.Windows.BaseClasses.SkylineShadowing
-        skylineShadowTrimble(
-        final n=4,
-        final s={20,20,50,50},
-        final deltaH={5,5,10,10},
-        final gap={false,true,false},
-        final alpha={1.3962634015955,1.7453292519943,2.9670597283904,
-            3.3161255787892})
-        annotation (Placement(transformation(extent={{-48,-18},{-28,2}})));
-      Modelica.Blocks.Sources.CombiTimeTable alt_Trimble(
-        columns={2},
-        table=[0,0.625; 3600,0.875; 7200,0.875; 10800,1; 14400,0.75; 18000,0.75; 21600,
-            0.875; 21600,0.875; 25200,0.875; 28800,0.875; 32400,0.875; 36000,0.875;
-            39600,0.875; 43200,0.875; 46800,1; 50400,0.875; 54000,0.625; 57600,0.75;
-            61200,0.75; 64800,0.375; 64800,0.875; 68400,0.875; 72000,0.375; 75600,0.875;
-            79200,0.875; 82800,0.375; 86400,0.5],
-        tableOnFile=true,
-        tableName="alt",
-        smoothness=Modelica.Blocks.Types.Smoothness.ConstantSegments,
-        fileName="N:/Forschung/EBC0134_PtJ_Enff-BIM_/Students/mla-srs/vdi/Resources/WeatherData/Trimble/Trimble_Wetterdaten_April_alt.txt")
-        annotation (Placement(transformation(extent={{-48,-50},{-28,-30}})));
-      Modelica.Blocks.Sources.CombiTimeTable solAzi_Trimble(
-        columns={2},
-        table=[0,0.625; 3600,0.875; 7200,0.875; 10800,1; 14400,0.75; 18000,0.75; 21600,
-            0.875; 21600,0.875; 25200,0.875; 28800,0.875; 32400,0.875; 36000,0.875;
-            39600,0.875; 43200,0.875; 46800,1; 50400,0.875; 54000,0.625; 57600,0.75;
-            61200,0.75; 64800,0.375; 64800,0.875; 68400,0.875; 72000,0.375; 75600,0.875;
-            79200,0.875; 82800,0.375; 86400,0.5],
-        tableOnFile=true,
-        tableName="solAzi",
-        smoothness=Modelica.Blocks.Types.Smoothness.ConstantSegments,
-        fileName="N:/Forschung/EBC0134_PtJ_Enff-BIM_/Students/mla-srs/vdi/Resources/WeatherData/Trimble/Trimble_Wetterdaten_April_solAzi.txt")
-        annotation (Placement(transformation(extent={{-88,-18},{-68,2}})));
-      Modelica.Blocks.Logical.Greater greater
-        annotation (Placement(transformation(extent={{6,-18},{26,2}})));
-      Modelica.Blocks.Math.BooleanToInteger booleanToInteger
-        annotation (Placement(transformation(extent={{42,-18},{62,2}})));
+      Modelica.Blocks.Sources.Sine solAziSine(freqHz=1, amplitude=Modelica.Constants.pi)
+        "Solar azimuth input generated as sine"
+        annotation (Placement(transformation(extent={{-48,-10},{-28,10}})));
     equation
       connect(solAziSine.y, skylineShadow.solAzi)
-        annotation (Line(points={{-25,58},{-25,58},{29,58}},
-                                                         color={0,0,127}));
-      connect(solAzi_Trimble.y[1], skylineShadowTrimble.solAzi)
-        annotation (Line(points={{-67,-8},{-49,-8}}, color={0,0,127}));
-      connect(skylineShadowTrimble.altLim, greater.u1) annotation (Line(points={{-27,-8},
-              {-27,-8},{4,-8}},             color={0,0,127}));
-      connect(alt_Trimble.y[1], greater.u2) annotation (Line(points={{-27,-40},
-              {-10,-40},{-10,-16},{4,-16}},
-                                          color={0,0,127}));
-      connect(greater.y, booleanToInteger.u) annotation (Line(points={{27,-8},{
-              40,-8}},               color={255,0,255}));
+        annotation (Line(points={{-27,0},{-27,0},{27,0}},color={0,0,127}));
       annotation (Icon(coordinateSystem(preserveAspectRatio=false)), Diagram(
-            coordinateSystem(preserveAspectRatio=false)));
+            coordinateSystem(preserveAspectRatio=false)),
+        Documentation(revisions="<html>
+<ul>
+<li>July 13, 2016,&nbsp; by Stanley Risch:<br>Implemented. </li>
+<ul>
+</html>", info="<html>
+This is an example for the <a href=\"Windows.BaseClasses.SkylineShadowing\">SkylineShadowing</a> model. It simulates two buildings which shade the window. One smaller building is on the east side and one bigger building on the west side. Between the buildings there is a gap.<\\p>
+</html>"));
     end SkylineShadowingTest;
-
 
     package BaseClasses
         extends Modelica.Icons.BasesPackage;
@@ -1892,7 +1882,7 @@ This function converts the inclination of a surface from the <a href=\"Annex60\"
 
       equation
         incAng = max(0, Modelica.Math.acos(Modelica.Math.cos(to_surfaceTiltVDI(til))*Modelica.Math.sin(alt) +
-        Modelica.Math.sin(to_surfaceTiltVDI(til))*Modelica.Math.cos(alt)*Modelica.Math.cos((abs(to_northAzimuth(azi)-solAzi)))));
+        Modelica.Math.sin(to_surfaceTiltVDI(til))*Modelica.Math.cos(alt)*Modelica.Math.cos((abs(to_northAzimuth(azi)-to_northAzimuth(solAzi))))));
 
         annotation (
           defaultComponentName="incAng",
@@ -1921,7 +1911,7 @@ First implementation.
                     "modelica://Annex60/Resources/Images/BoundaryConditions/SolarGeometry/BaseClasses/IncidenceAngle.png")}));
       end IncidenceAngleVDI6007;
 
-      model SolarDeclinationAngleVDI6007 "calculates the solar azimuth angle based on the equations of VDI 6007 part 3.
+      model SolarDeclinationAngleVDI6007 "Calculates the solar azimuth angle based on the equations of VDI 6007 part 3.
   It is modelled to test other models based on VDI2078. "
         extends Modelica.Blocks.Icons.Block;
         import Modelica.SIunits.Conversions.from_deg;
@@ -1939,10 +1929,13 @@ First implementation.
         decAng=from_deg(0.3948-23.2559*Modelica.Math.cos(J+from_deg(9.1))-0.3915*Modelica.Math.cos(2*J+from_deg(5.4))-0.1764*Modelica.Math.cos(3*J+from_deg(26)));
 
         annotation (Icon(coordinateSystem(preserveAspectRatio=false)), Diagram(
-              coordinateSystem(preserveAspectRatio=false)));
+              coordinateSystem(preserveAspectRatio=false)),
+          Documentation(info="<html>
+This model computes the solar declination angle for test case 1 and 3 of the VDI2078 in April.
+</html>"));
       end SolarDeclinationAngleVDI6007;
 
-      model SolarHourAngleVDI6007 "calculates the solar hour angle every hour based on the equations of VDI 6007 part 3.
+      model SolarHourAngleVDI6007 "Calculates the solar hour angle every hour based on the equations of VDI 6007 part 3.
   It is modelled to test other Models based on VDI2078. It doesn't consider summer time"
 
         extends Modelica.Blocks.Icons.Block;
@@ -1967,8 +1960,14 @@ First implementation.
         woz=(integer(time/3600)-0.5-integer(time/day)*24)-4*(15-to_deg(lon))/60+zgl/60;
         solHouAng=(12-woz)*2*Modelica.Constants.pi/24;
         annotation (Icon(coordinateSystem(preserveAspectRatio=false)), Diagram(
-              coordinateSystem(preserveAspectRatio=false)));
+              coordinateSystem(preserveAspectRatio=false)),
+          Documentation(info="<html>
+This model computes the solar hour angle for test case 1 and 3 of VDI2078 in April.
+</html>"));
       end SolarHourAngleVDI6007;
+      annotation (Documentation(info="<html>
+<p> This package includes BaseClasses that are only used for validation causes. </p>
+</html>"));
     end BaseClasses;
 
     package VDI2078
@@ -2096,7 +2095,8 @@ First implementation.
               1602000,679.6830794; 1605600,649.0893148; 1609200,568.2428437;
               1612800,445.5861318; 1616400,295.7855335; 1620000,142.4655924;
               1623600,26.47655754; 1627200,0; 1630800,0; 1634400,0; 1638000,0])
-          annotation (Placement(transformation(extent={{-102,96},{-82,116}})));
+          "Direct horizontal irradiation"
+          annotation (Placement(transformation(extent={{-102,94},{-82,114}})));
 
         Modelica.Blocks.Sources.CombiTimeTable alt(
           columns={2},
@@ -2254,6 +2254,7 @@ First implementation.
               1609200,0.739755433; 1612800,0.606187916; 1616400,0.450168115;
               1620000,0.28318588; 1623600,0.113490388; 1627200,-0.052089885;
               1630800,-0.206727187; 1634400,-0.342547809; 1638000,-0.450098665])
+          "solar altitude angle"
           annotation (Placement(transformation(extent={{-102,-70},{-82,-50}})));
 
         SolarGain.CorrectionGTaueDoublePane CorGTaue(
@@ -2261,8 +2262,10 @@ First implementation.
           UWin=1.4,
           xi=0,
           til(displayUnit="deg") = {1.5707963267949})
+          "Correction values for non-parallel and non-vertical irradiation for VDI2078 test case 1"
           annotation (Placement(transformation(extent={{-52,46},{-32,66}})));
         Windows.BaseClasses.Sunblind sunblind(lim=200)
+          "Calculates if the sunblind is active"
           annotation (Placement(transformation(extent={{-20,-46},{-6,-36}})));
         Modelica.Blocks.Sources.CombiTimeTable HDifTil(
           columns={2},
@@ -2384,6 +2387,7 @@ First implementation.
               1602000,113.9769508; 1605600,110.8160672; 1609200,102.2349643;
               1612800,88.6971602; 1616400,72.43914949; 1620000,49.6428337;
               1623600,21.13288527; 1627200,0; 1630800,0; 1634400,0; 1638000,0])
+          "Diffuse irradiation on the tilted window"
           annotation (Placement(transformation(extent={{-102,68},{-82,88}})));
         Modelica.Blocks.Sources.CombiTimeTable HDifHorCle(
           columns={2},
@@ -2507,6 +2511,7 @@ First implementation.
               1605600,104.4130318; 1609200,99.82357411; 1612800,92.07110863;
               1616400,80.71803866; 1620000,63.97542723; 1623600,34.69852159;
               1627200,0; 1630800,0; 1634400,0; 1638000,0])
+          "Diffuse irradiation at clear sky on horizontal surface"
           annotation (Placement(transformation(extent={{-102,38},{-82,58}})));
         Modelica.Blocks.Sources.CombiTimeTable HDifHorCov(
           columns={2},
@@ -2628,6 +2633,7 @@ First implementation.
               1602000,55.6149166; 1605600,53.35451152; 1609200,47.36107656;
               1612800,38.20692416; 1616400,26.88090607; 1620000,14.891867;
               1623600,4.534899719; 1627200,0; 1630800,0; 1634400,0; 1638000,0])
+          "Diffuse irradiation at covered sky on horizontal surface"
           annotation (Placement(transformation(extent={{-102,10},{-82,30}})));
         Modelica.Blocks.Sources.CombiTimeTable HDifTilCle(
           columns={2},
@@ -2749,6 +2755,7 @@ First implementation.
               1609200,83.46122296; 1612800,73.55208829; 1616400,61.78366585;
               1620000,43.73975719; 1623600,19.33526916; 1627200,0; 1630800,0;
               1634400,0; 1638000,0])
+          "Diffuse irradiation at clear sky on the tilted window"
           annotation (Placement(transformation(extent={{-102,-18},{-82,2}})));
         Modelica.Blocks.Sources.CombiTimeTable HDifTilCov(
           columns={2},
@@ -2871,13 +2878,13 @@ First implementation.
               18.7737413; 1612800,15.14507191; 1616400,10.65548364; 1620000,
               5.90307651; 1623600,1.797616109; 1627200,0; 1630800,0; 1634400,0;
               1638000,0])
+          "Diffuse irradiation at covered sky on tilted surface"
           annotation (Placement(transformation(extent={{-102,-44},{-82,-24}})));
-        Windows.BaseClasses.HeatIllumination heatIllumination(HIll1=120, HIll2=240)
-          annotation (Placement(transformation(extent={{84,-8},{104,12}})));
         BoundaryConditions.SolarIrradiation.BaseClasses.DirectTiltedSurface
-          HDirTil
+          HDirTil "Direct irradiation on the tilted window"
           annotation (Placement(transformation(extent={{-26,-96},{-6,-76}})));
         Windows.BaseClasses.Conversions.to_HDirNor to_HDirNor
+          "Convertion of the horizontal direct irradiation to the normal direct irradiation"
           annotation (Placement(transformation(extent={{-58,-74},{-48,-64}})));
         Windows.BaseClasses.Illumination illumination(
           e_ILim1=250,
@@ -2889,25 +2896,29 @@ First implementation.
           T_L={0.72},
           D=0.027,
           til={1.5707963267949})
+          "determining the switch moments for VDI2078 test case 1"
           annotation (Placement(transformation(extent={{62,-8},{82,12}})));
-        Windows.Validation.BaseClasses.SolarHourAngleVDI6007 solarHourAngleVDI(lon=0.15009831567151)
+        Windows.Validation.BaseClasses.SolarHourAngleVDI6007 solarHourAngleVDI(lon=
+              0.15009831567151)
+          "Solar hour angle based on the calculations of VDI6007"
           annotation (Placement(transformation(extent={{-76,-98},{-68,-90}})));
         BoundaryConditions.SolarGeometry.BaseClasses.IncidenceAngle
           incAng(
           azi(displayUnit="deg") = 0,
           til(displayUnit="deg") = 1.5707963267949,
-          lat=0.86393797973719)
+          lat=0.86393797973719) "Solar incidence angle on the tilted window"
           annotation (Placement(transformation(extent={{-54,-94},{-44,-84}})));
         Windows.Validation.BaseClasses.SolarDeclinationAngleVDI6007 solarDeclinationAngleVDI
+          "Solar declination angle based on the calculations of VDI6007"
           annotation (Placement(transformation(extent={{-76,-84},{-68,-76}})));
         Windows.BaseClasses.HVisible HVis(
           n=1,
           T_LTotDir={0.08},
           T_LTotDif={0.32},
           T_L={0.72},
-          til={1.5707963267949})
+          til={1.5707963267949}) "visible light entering the room"
           annotation (Placement(transformation(extent={{40,24},{90,84}})));
-        Modelica.Blocks.Sources.CombiTimeTable HVisSum(
+        Modelica.Blocks.Sources.CombiTimeTable HVisSum_VDI2078(
           columns={2},
           smoothness=Modelica.Blocks.Types.Smoothness.ConstantSegments,
           tableName="HVis",
@@ -3027,9 +3038,9 @@ First implementation.
               323.4889321; 1602000,335.5236891; 1605600,319.269018; 1609200,
               275.6788729; 1612800,208.5610811; 1616400,129.0805857; 1620000,
               111.0152963; 1623600,24.65905213; 1627200,0; 1630800,0; 1634400,0;
-              1638000,0])
+              1638000,0]) "Comparison for  the entering visible light"
           annotation (Placement(transformation(extent={{36,-70},{56,-50}})));
-        Modelica.Blocks.Sources.CombiTimeTable HLimVis(
+        Modelica.Blocks.Sources.CombiTimeTable HLimVis_VDI2078(
           columns={2},
           smoothness=Modelica.Blocks.Types.Smoothness.ConstantSegments,
           tableName="HLimVis",
@@ -3137,8 +3148,10 @@ First implementation.
               196.6998591; 1602000,196.6998591; 1605600,196.6998591; 1609200,
               196.6998591; 1612800,98.34992957; 1616400,98.34992957; 1620000,0;
               1623600,0; 1627200,0; 1630800,0; 1634400,0; 1638000,0])
+          "Comparison for the limit to activate the illumination"
           annotation (Placement(transformation(extent={{36,-42},{56,-22}})));
-        Modelica.Blocks.Logical.Greater illumination_Trimble
+        Modelica.Blocks.Logical.Greater illumination_VDI2078
+          "Comparison for the illumination boolean"
           annotation (Placement(transformation(extent={{82,-42},{102,-22}})));
       equation
         connect(HDifTil.y[1], sunblind.HDifTil) annotation (Line(points={{-81,
@@ -3148,15 +3161,10 @@ First implementation.
                 {-51,54}}, color={255,0,255}));
         connect(to_HDirNor.HDirNor, HDirTil.HDirNor) annotation (Line(points={{-47,-69},
                 {-34,-69},{-34,-80},{-28,-80}},  color={0,0,127}));
-        connect(HDirHor.y[1], to_HDirNor.HDirHor) annotation (Line(points={{-81,
-                106},{-70,106},{-70,-67},{-59,-67}}, color={0,0,127}));
+        connect(HDirHor.y[1], to_HDirNor.HDirHor) annotation (Line(points={{-81,104},
+                {-70,104},{-70,-67},{-59,-67}},      color={0,0,127}));
         connect(alt.y[1], to_HDirNor.alt) annotation (Line(points={{-81,-60},{
                 -59,-60},{-59,-71}}, color={0,0,127}));
-        connect(heatIllumination.Illumination, illumination.Illumination)
-          annotation (Line(
-            points={{83,2},{83,2}},
-            color={255,0,255},
-            smooth=Smooth.None));
         connect(HDirTil.HDirTil, sunblind.HDirTil) annotation (Line(
             points={{-5,-86},{0,-86},{0,-56},{-34,-56},{-34,-44},{-20.7,-44}},
             color={0,0,127},
@@ -3207,13 +3215,16 @@ First implementation.
                 -34},{-22,-34},{-22,69.3},{38.25,69.3}}, color={0,0,127}));
         connect(HDifTilCle.y, HVis.HDifTilCle) annotation (Line(points={{-81,-8},
                 {-22,-8},{-22,74.1},{38.25,74.1}}, color={0,0,127}));
-        connect(HLimVis.y[1], illumination_Trimble.u1) annotation (Line(points=
-                {{57,-32},{66,-32},{80,-32}}, color={0,0,127}));
-        connect(HVisSum.y[1], illumination_Trimble.u2) annotation (Line(points=
-                {{57,-60},{68,-60},{68,-40},{80,-40}}, color={0,0,127}));
+        connect(HLimVis_VDI2078.y[1], illumination_VDI2078.u1) annotation (Line(
+              points={{57,-32},{66,-32},{80,-32}}, color={0,0,127}));
+        connect(HVisSum_VDI2078.y[1], illumination_VDI2078.u2) annotation (Line(
+              points={{57,-60},{68,-60},{68,-40},{80,-40}}, color={0,0,127}));
         annotation (experiment(StartTime=0,StopTime=1638000),Diagram(coordinateSystem(preserveAspectRatio=false, extent={{-120,
                   -100},{120,120}})),
-          Icon(coordinateSystem(extent={{-120,-100},{120,120}})));
+          Icon(coordinateSystem(extent={{-120,-100},{120,120}})),
+          Documentation(info="<html>
+<p>This model simulates parts of VDI2078 test case 1. The solar irradiation is treated as an input. To calculate the boundary conditions <a href=\"Annex60.BoundaryConditions\">Annex60</a> models are used. </p>
+</html>"));
       end TestCase1_Illumination;
 
       model TestCase3_VentilationHeat
@@ -3226,8 +3237,10 @@ First implementation.
           tau_e=0,
           rho_e=0.8125,
           til=1.5707963267949)
+          "Calculates the heat input due to ventialtion for test case 3 of VDI2078"
           annotation (Placement(transformation(extent={{80,-10},{100,10}})));
         Windows.BaseClasses.Sunblind sunblind(lim=200)
+          "Calculates if the sunblind of the window is active"
           annotation (Placement(transformation(extent={{48,-2},{56,6}})));
         Modelica.Blocks.Sources.CombiTimeTable HDirHor(
           columns={2},
@@ -3349,6 +3362,7 @@ First implementation.
               1605600,157.7675434; 1609200,147.1846507; 1612800,130.2780328;
               1616400,107.5989447; 1620000,78.86729423; 1623600,39.23342131;
               1627200,0; 1630800,0; 1634400,0; 1638000,0])
+          "Direct irradiation on horizontal surface"
           annotation (Placement(transformation(extent={{-96,-26},{-82,-12}})));
         Modelica.Blocks.Sources.CombiTimeTable alt(
           columns={2},
@@ -3506,6 +3520,7 @@ First implementation.
               1609200,0.739755433; 1612800,0.606187916; 1616400,0.450168115;
               1620000,0.28318588; 1623600,0.113490388; 1627200,-0.052089885;
               1630800,-0.206727187; 1634400,-0.342547809; 1638000,-0.450098665])
+          "Solar altitude angle"
           annotation (Placement(transformation(extent={{-96,-52},{-82,-38}})));
         Modelica.Blocks.Sources.CombiTimeTable HDifTilCle(
           columns={2},
@@ -3627,6 +3642,7 @@ First implementation.
               1609200,83.46122296; 1612800,73.55208829; 1616400,61.78366585;
               1620000,43.73975719; 1623600,19.33526916; 1627200,0; 1630800,0;
               1634400,0; 1638000,0])
+          "Diffuse irradiation on tilted surface at clear sky"
           annotation (Placement(transformation(extent={{-96,16},{-82,30}})));
         Modelica.Blocks.Sources.CombiTimeTable HDifTilCov(
           columns={2},
@@ -3748,9 +3764,10 @@ First implementation.
               21.38153013; 1602000,22.04553048; 1605600,21.14951495; 1609200,
               18.7737413; 1612800,15.14507191; 1616400,10.65548364; 1620000,
               5.90307651; 1623600,1.797616109; 1627200,0; 1630800,0; 1634400,0;
-              1638000,0])
+              1638000,0]) "Diffuse irradiation on tilted surface"
           annotation (Placement(transformation(extent={{-96,-6},{-82,8}})));
         Modelica.Blocks.Math.Add HDifTil
+          "Diffuse irradiation on a tilted surface"
           annotation (Placement(transformation(extent={{-32,8},{-22,18}})));
         Modelica.Blocks.Sources.CombiTimeTable HDifHorCov(
           columns={2},
@@ -3872,8 +3889,10 @@ First implementation.
               1602000,55.6149166; 1605600,53.35451152; 1609200,47.36107656;
               1612800,38.20692416; 1616400,26.88090607; 1620000,14.891867;
               1623600,4.534899719; 1627200,0; 1630800,0; 1634400,0; 1638000,0])
+          "Diffuse irradiation on a horizontal surface at covered sky"
           annotation (Placement(transformation(extent={{-96,56},{-82,70}})));
         Modelica.Blocks.Math.Add HDifHor
+          "Diffuse irradiation on a horizontal surface"
           annotation (Placement(transformation(extent={{-32,32},{-22,42}})));
         Modelica.Blocks.Sources.CombiTimeTable HDifHorCle(
           columns={2},
@@ -3997,21 +4016,25 @@ First implementation.
               1605600,104.4130318; 1609200,99.82357411; 1612800,92.07110863;
               1616400,80.71803866; 1620000,63.97542723; 1623600,34.69852159;
               1627200,0; 1630800,0; 1634400,0; 1638000,0])
+          "Diffuse irradiation on a horizontal surface at clear sky"
           annotation (Placement(transformation(extent={{-96,36},{-82,50}})));
         BoundaryConditions.SolarGeometry.BaseClasses.IncidenceAngle
           incAng(
           azi(displayUnit="deg") = 0,
           til(displayUnit="deg") = 1.5707963267949,
-          lat=0.86393797973719)
+          lat=0.86393797973719) "Incidence angle for the window"
           annotation (Placement(transformation(extent={{-56,-40},{-44,-28}})));
         BoundaryConditions.SolarIrradiation.BaseClasses.DirectTiltedSurface
-          HDirTil
+          HDirTil "Direct solar irradiation on the window"
           annotation (Placement(transformation(extent={{-30,-26},{-14,-10}})));
         Windows.BaseClasses.Conversions.to_HDirNor to_HDirNor
+          "Converts the direct irradiation onto a horizontal surface to direct irradiation on a normal surface"
           annotation (Placement(transformation(extent={{-58,-8},{-46,4}})));
         Windows.Validation.BaseClasses.SolarHourAngleVDI6007 SolHouAng(lon(displayUnit="deg") = 0.15009831567151)
+          "Solar hour angle based on calculation of VDI 6007"
           annotation (Placement(transformation(extent={{-64,-40},{-58,-34}})));
         Windows.Validation.BaseClasses.SolarDeclinationAngleVDI6007 decAng
+          "Declination angle  based on the calculations of VDI6007"
           annotation (Placement(transformation(extent={{-64,-34},{-58,-28}})));
         Modelica.Blocks.Sources.CombiTimeTable HVen_VDI2078(
           columns={2},
@@ -4112,7 +4135,8 @@ First implementation.
               1602000,23.03789677; 1605600,21.85111281; 1609200,18.73088748;
               1612800,14.06286399; 1616400,0; 1620000,0; 1623600,0; 1627200,0;
               1630800,0; 1634400,0; 1638000,0])
-          annotation (Placement(transformation(extent={{80,-40},{100,-20}})));
+          "Comparison for the heat input due to ventilation with active sunblind"
+          annotation (Placement(transformation(extent={{80,-38},{100,-18}})));
       equation
         connect(HDifTilCle.y[1], HDifTil.u1) annotation (Line(points={{-81.3,23},
                 {-62,23},{-62,16},{-42,16},{-34,16},{-33,16}}, color={0,0,127}));
@@ -4157,8 +4181,15 @@ First implementation.
                 -57.2,-36.88},{-57.45,-36.88},{-57.45,-37},{-57.7,-37}}, color={0,
                 0,127}));
         annotation (experiment(StartTime=0,StopTime=1638000),Icon(coordinateSystem(preserveAspectRatio=false)), Diagram(
-              coordinateSystem(preserveAspectRatio=false)));
+              coordinateSystem(preserveAspectRatio=false)),
+          Documentation(info="<html>
+<p>This model simulates parts of VDI2078 test case 3. The solar irradiation is treated as an input. To calculate the boundary conditions <a href=\"Annex60.BoundaryConditions\">Annex60</a> models are used.</p>
+</html>"));
       end TestCase3_VentilationHeat;
+      annotation (Documentation(info="<html>
+
+<p>This package contains parts of VDI2078 test cases 1 and 3. In test case 1 the <a href=\"Windows.BaseClasses.Illumination\">Illumination</a> model is tested. In test case 3 the <a href=\"Windows.BaseClasses.VentilationHeat\">VentilationHeat</a> model is tested.</p>
+</html>"));
     end VDI2078;
 
     package SelfShadowing
@@ -4180,15 +4211,19 @@ First implementation.
           final dBel={0},
           final azi(displayUnit="deg") = {0},
           final til(displayUnit="deg") = {1.5707963267949})
+          "Shadowing due to a projection above the window"
                 annotation (Placement(transformation(extent={{56,46},{88,74}})));
         BaseClasses.IncidenceAngleVDI6007 incAng1(azi=0, til=90)
+          "Incidence angle for the window"
           annotation (Placement(transformation(extent={{-26,40},{-6,60}})));
-        Modelica.Blocks.Sources.Constant solAzi(k=Modelica.Constants.pi)
+        Modelica.Blocks.Sources.Constant solAzi(k=0)
+          "Constant soar azimuth angle (North)"
           annotation (Placement(transformation(extent={{-88,24},{-68,44}})));
         Modelica.Blocks.Sources.Constant alt(k=Modelica.Constants.pi/6)
+          "Constant altitude angle"
           annotation (Placement(transformation(extent={{-88,-20},{-68,0}})));
         Modelica.Blocks.Sources.Sine altSine(freqHz=1, amplitude=Modelica.Constants.pi
-              /3)
+              /3) "Altitude angle generated as a sine"
           annotation (Placement(transformation(extent={{-88,56},{-68,76}})));
         Windows.BaseClasses.SelfShadowing selfShadowingAboveSin(
           final n=1,
@@ -4204,10 +4239,13 @@ First implementation.
           final dBel={0},
           final azi(displayUnit="deg") = {0},
           final til(displayUnit="deg") = {1.5707963267949})
+          "Shadowing due to a projection above the window"
                 annotation (Placement(transformation(extent={{56,-32},{88,-4}})));
         BaseClasses.IncidenceAngleVDI6007 incAng2(azi=0, til=90)
+          "Incidence angle for the window"
           annotation (Placement(transformation(extent={{-26,-38},{-6,-18}})));
         Modelica.Blocks.Sources.Sine solAziSine(freqHz=0.25, amplitude=2*Modelica.Constants.pi)
+          "Solar azimuth generated as a sine"
           annotation (Placement(transformation(extent={{-88,-52},{-68,-32}})));
       equation
         connect(altSine.y, incAng1.alt) annotation (Line(
@@ -4241,7 +4279,10 @@ First implementation.
               points={{-5,-28},{54.4,-28},{54.4,-27.8}}, color={0,0,127}));
         annotation (Icon(coordinateSystem(preserveAspectRatio=false)), Diagram(
               coordinateSystem(preserveAspectRatio=false, extent={{-100,-100},{
-                  100,100}})));
+                  100,100}})),
+          Documentation(info="<html>
+<p>This model simulates a projection above the window.</p>
+</html>"));
       end SelfShadowingTestAbove;
 
       model SelfShadowingTestBelow
@@ -4260,14 +4301,16 @@ First implementation.
           final azi(displayUnit="deg") = {0},
           final til(displayUnit="deg") = {1.5707963267949},
           final dBel={0.01},
-          final bBel={1})
+          final bBel={1}) "Shadowing due to a projection below"
           annotation (Placement(transformation(extent={{56,46},{88,74}})));
         BaseClasses.IncidenceAngleVDI6007 incAng1(azi=0, til=90)
+          "Incidence Angle for the window"
           annotation (Placement(transformation(extent={{-26,40},{-6,60}})));
-        Modelica.Blocks.Sources.Constant solAzi(k=3.141592654)
+        Modelica.Blocks.Sources.Constant solAzi(k=0)
+          "Constant solar azimuth angle (north)"
           annotation (Placement(transformation(extent={{-88,24},{-68,44}})));
         Modelica.Blocks.Sources.Sine altSine(freqHz=1, amplitude=Modelica.Constants.pi
-              /2)
+              /2) "Solar altitude angle generated as a sine"
           annotation (Placement(transformation(extent={{-88,56},{-68,76}})));
         Windows.BaseClasses.SelfShadowing selfShadowingBalkony(
           final bRig={0},
@@ -4282,16 +4325,17 @@ First implementation.
           final azi(displayUnit="deg") = {0},
           final til(displayUnit="deg") = {1.5707963267949},
           final bBel={1},
-          final dBel={-0.2})
+          final dBel={-0.2}) "Shadowing due to a balkony"
           annotation (Placement(transformation(extent={{56,-40},{88,-12}})));
         BaseClasses.IncidenceAngleVDI6007 incAng2(azi=0, til=90)
+          "Incidence angle for the window"
           annotation (Placement(transformation(extent={{-26,-46},{-6,-26}})));
-        Modelica.Blocks.Sources.Constant solAzi1(
-                                                k=3.141592654)
+        Modelica.Blocks.Sources.Constant solAzi1(k=0)
+          "Constant solar azimuth angle (north)"
           annotation (Placement(transformation(extent={{-88,-62},{-68,-42}})));
         Modelica.Blocks.Sources.Sine altSine1(
                                              freqHz=1, amplitude=Modelica.Constants.pi
-              /2)
+              /2) "Solar altitude angle generated as a sine"
           annotation (Placement(transformation(extent={{-88,-30},{-68,-10}})));
       equation
         connect(incAng1.incAng, selfShadowingBelow.incAng[1]) annotation (Line(
@@ -4332,7 +4376,10 @@ First implementation.
             smooth=Smooth.None));
         annotation (Icon(coordinateSystem(preserveAspectRatio=false)), Diagram(
               coordinateSystem(preserveAspectRatio=false, extent={{-100,-100},{
-                  100,100}}), graphics));
+                  100,100}})),
+          Documentation(info="<html>
+<p>This model simulates a projection below the window and a balcony.</p>
+</html>"));
       end SelfShadowingTestBelow;
 
       model SelfShadowingTestLeft
@@ -4352,12 +4399,16 @@ First implementation.
           final til(displayUnit="deg") = {1.5707963267949},
           final bLef={1},
           final dLef={0.01})
+          "Shadowing due to a projection on the left-hand side of the window"
           annotation (Placement(transformation(extent={{62,-4},{94,24}})));
         BaseClasses.IncidenceAngleVDI6007 incAng1(azi=0, til=90)
+          "Incidence angle for the window"
           annotation (Placement(transformation(extent={{-10,-12},{10,8}})));
         Modelica.Blocks.Sources.Constant alt(k=0.3490658504)
+          "Constant altitude angle"
           annotation (Placement(transformation(extent={{-76,8},{-56,28}})));
         Modelica.Blocks.Sources.Sine solAziSine(freqHz=0.25, amplitude=2*Modelica.Constants.pi)
+          "Solar azimuth angle generated as a sine"
           annotation (Placement(transformation(extent={{-76,-26},{-56,-6}})));
       equation
         connect(incAng1.incAng, selfShadowingLeft.incAng[1]) annotation (Line(
@@ -4377,7 +4428,10 @@ First implementation.
             smooth=Smooth.None));
         annotation (Icon(coordinateSystem(preserveAspectRatio=false)), Diagram(
               coordinateSystem(preserveAspectRatio=false, extent={{-100,-100},{
-                  100,100}}), graphics));
+                  100,100}})),
+          Documentation(info="<html>
+<p>This model simulates a projection on the left-hand side of the window.</p>
+</html>"));
       end SelfShadowingTestLeft;
 
       model SelfShadowingTestRight
@@ -4397,12 +4451,16 @@ First implementation.
           final dRig={0.01},
           final bAbo={0},
           final dAbo={0})
+          "Shadowing due to a projection on the right-hand side"
           annotation (Placement(transformation(extent={{60,-4},{92,24}})));
         BaseClasses.IncidenceAngleVDI6007 incAng1(azi=0, til=90)
+          "Incidence Angle for the window"
           annotation (Placement(transformation(extent={{-10,-12},{10,8}})));
         Modelica.Blocks.Sources.Constant alt(k=0.3490658504)
+          "Constant altitude angle"
           annotation (Placement(transformation(extent={{-74,8},{-54,28}})));
         Modelica.Blocks.Sources.Sine solAziSine(freqHz=0.25, amplitude=2*Modelica.Constants.pi)
+          "Solar azimuth angle generated as a sine"
           annotation (Placement(transformation(extent={{-76,-26},{-56,-6}})));
       equation
         connect(incAng1.incAng, selfShadowingRight.incAng[1]) annotation (Line(
@@ -4422,57 +4480,28 @@ First implementation.
             smooth=Smooth.None));
         annotation (Icon(coordinateSystem(preserveAspectRatio=false)), Diagram(
               coordinateSystem(preserveAspectRatio=false, extent={{-100,-100},{
-                  100,100}}), graphics));
+                  100,100}}), graphics),
+          Documentation(info="<html>
+<p>This model simulates a projection on the right-hand side of the window.</p>
+</html>"));
       end SelfShadowingTestRight;
 
-      model SelfShadowingTestBothSides
-        extends Modelica.Icons.Example;
-
-        Windows.BaseClasses.SelfShadowing selfShadowingBothSides(
-          n=1,
-          final b={1},
-          final h={1},
-          final bBel={0},
-          final dBel={0},
-          final azi(displayUnit="deg") = {0},
-          final til(displayUnit="deg") = {1.5707963267949},
-          final bLef={0.5},
-          final bRig={0.5},
-          final dLef={0.01},
-          final dRig={0.01},
-          final bAbo={0},
-          final dAbo={0})
-          annotation (Placement(transformation(extent={{60,-4},{92,24}})));
-        BaseClasses.IncidenceAngleVDI6007 incAng1(azi=0, til=90)
-          annotation (Placement(transformation(extent={{-10,-12},{10,8}})));
-        Modelica.Blocks.Sources.Constant alt(k=0.3490658504)
-          annotation (Placement(transformation(extent={{-74,8},{-54,28}})));
-        Modelica.Blocks.Sources.Sine solAziSine(freqHz=0.25, amplitude=2*Modelica.Constants.pi)
-          annotation (Placement(transformation(extent={{-76,-26},{-56,-6}})));
-      equation
-        connect(incAng1.incAng, selfShadowingBothSides.incAng[1]) annotation (Line(
-              points={{11,-2},{36,-2},{36,0.2},{58.4,0.2}}, color={0,0,127}));
-        connect(alt.y, selfShadowingBothSides.alt) annotation (Line(points={{-53,18},
-                {-18,18},{-18,16},{16,16},{30,16},{36,16},{36,10},{58.4,10}}, color=
-               {0,0,127}));
-        connect(alt.y, incAng1.alt) annotation (Line(points={{-53,18},{-34,18},{
-                -34,3.4},{-12.2,3.4}}, color={0,0,127}));
-        connect(solAziSine.y, incAng1.solAzi) annotation (Line(
-            points={{-55,-16},{-32,-16},{-32,-6.8},{-12,-6.8}},
-            color={0,0,127},
-            smooth=Smooth.None));
-        connect(solAziSine.y, selfShadowingBothSides.solAzi) annotation (Line(
-            points={{-55,-16},{44,-16},{44,19.8},{58.4,19.8}},
-            color={0,0,127},
-            smooth=Smooth.None));
-        annotation (Icon(coordinateSystem(preserveAspectRatio=false)), Diagram(
-              coordinateSystem(preserveAspectRatio=false, extent={{-100,-100},{
-                  100,100}}), graphics));
-      end SelfShadowingTestBothSides;
+      annotation (Documentation(info="<html>
+This package contains four tests for the <a href=\"Windows.BaseClasses.SelfShadowing\">SelfShadowing</a> model. 
+</html>"));
     end SelfShadowing;
+    annotation (Documentation(info="<html>
+<p>This package contains models for validation of Windows models. 
+<\\p>
+
+</html>", revisions="<html>
+<ul>
+<li>July 13, 2016,&nbsp; by Stanley Risch:<br>Implemented. </li>
+<ul>
+</html>"));
   end Validation;
 
-  model Window
+  model Window "Calculation of solar energy transmitted through windows"
     parameter Modelica.SIunits.Angle lat "Latitude";
     parameter Integer n(min = 1) "number of windows"
       annotation(dialog(group="window"));
@@ -4644,8 +4673,8 @@ First implementation.
           coordinateSystem(preserveAspectRatio=false, extent={{-100,-100},{100,100}})),
       Documentation(info="<html>
 <p>This model calculates the input of heat and visible light into the room due to solar irradiation. Therefore it uses the calculations of VDI 6007 part 3.  It considers  the correction values for non-vertical and non-parallel radiation incidence.</p>
-<p>To calculate the solar irradiation and the solar geometry it uses the models of the  <a href=\"Annex60\">Annex60</a> library.</p>
-<p>An example on how this model should be used is  <a href=\"vdi6007.Examples.WindowExample\">WindowExample</a>. To consider the additional heat input in case of ventilation with the solar protection the  <a href=\"vdi6007.BaseClasses.VentilationHeat\">VentilationHeat</a> model can be used.</p>
+<p>To calculate the solar irradiation and the solar geometry it uses the models of the  <a href=\"Annex60.BoundaryConditions\">BoundaryConditions</a> package.</p>
+<p>An example on how this model should be used is  <a href=\"vdi6007.Examples.Window\">Window</a>. To consider the additional heat input in case of ventilation with the solar protection the  <a href=\"vdi6007.BaseClasses.VentilationHeat\">VentilationHeat</a> model can be used.</p>
   <h4>References</h4>
   <p>VDI. German Association of Engineers Guideline VDI 6007-3
   June 2015. Calculation of transient thermal response of rooms
@@ -4657,6 +4686,7 @@ First implementation.
   end Window;
 
   model ShadedWindow
+    "Calculation of solar energy transmitted through windows considering shadowing."
     parameter Modelica.SIunits.Angle lat "Latitude";
     parameter Integer n(min = 1) "number of windows"
       annotation(dialog(group="window"));
@@ -4684,36 +4714,35 @@ First implementation.
       "Surface tilt. til=90 degree for walls; til=0 for ceilings; til=180 for roof"
       annotation (Dialog(group="window"));
     parameter Modelica.SIunits.Length b[n] "width of window"
-      annotation (Dialog(group="Window parameter",
-        groupImage="modelica://vdi6007/Resources/Icons/SelfShadowing.png"));
+      annotation (Dialog(group="window"));
     parameter Modelica.SIunits.Height h[n] "height of window"
-      annotation (Dialog(group="Window parameter"));
+      annotation (Dialog(group="window"));
     parameter Modelica.SIunits.Length bLef[n] "window projection left"
-      annotation (Dialog(group="Window parameter"));
+      annotation (Dialog(group="window"));
     parameter Modelica.SIunits.Length bRig[n] "window projection right"
-      annotation (Dialog(group="Window parameter"));
+      annotation (Dialog(group="window"));
     parameter Modelica.SIunits.Length dLef[n]
       "distance between projection (left) and window"
-      annotation (Dialog(group="Window parameter"));
+      annotation (Dialog(group="window"));
     parameter Modelica.SIunits.Length dRig[n]
       "distance between projection (right) and window"
-      annotation (Dialog(group="Window parameter"));
+      annotation (Dialog(group="window"));
     parameter Modelica.SIunits.Length bAbo[n] "window projection above"
-      annotation (Dialog(group="Window parameter"));
+      annotation (Dialog(group="window"));
     parameter Modelica.SIunits.Length bBel[n] "window projection below"
-      annotation (Dialog(group="Window parameter"));
+      annotation (Dialog(group="window"));
     parameter Modelica.SIunits.Length dAbo[n]
       "distance between projection (above) and window"
-      annotation (Dialog(group="Window parameter"));
+      annotation (Dialog(group="window"));
     parameter Modelica.SIunits.Length dBel[n]
       "distance between projection (below) and window"
-      annotation (Dialog(group="Window parameter"));
+      annotation (Dialog(group="window"));
     parameter Modelica.SIunits.Angle azi[n](displayUnit="degree")
       "Surface azimuth. azi=-90 degree if surface outward unit normal points toward east; azi=0 if it points toward south"
-      annotation (Dialog(group="Window parameter"));
+      annotation (Dialog(group="window"));
     parameter Integer nCorPoi(min = 1) "Number of corner points"
         annotation(dialog(group="skyline"));
-    parameter Modelica.SIunits.Angle[nCorPoi] alpha(displayUnit="deg") "Azimuth of corner points, 0<(alpha(i+1)-alpha(i))<180°,
+    parameter Modelica.SIunits.Angle[nCorPoi] alpha(displayUnit="deg") "Azimuth of corner points, sorted from north to east to south to west,
      azi=-90 degree if surface outward unit normal points toward east; azi=0 if it points toward south"
         annotation(dialog(group="skyline"));
     parameter Modelica.SIunits.Height[nCorPoi] deltaH
@@ -4917,8 +4946,8 @@ First implementation.
           coordinateSystem(preserveAspectRatio=false)),
       Documentation(info="<html>
 <p>This model calculates the input of heat and visible light into the room due to solar irradiation. This model calculates the input of heat and visible light into the room due to solar irradiation. Therefore it uses the calculations of VDI 6007 part 3.  It considers  the correction values for non-vertical and non-parallel radiation incidence.</p>
-<p> Additionaly to the <a href=\"vdi6007.Window\">Window</a> model it includes the formation of shades because of the window itself and because of the surrounding skyline.  </p>
-<p>An example on how this model should be used is  <a href=\"vdi6007.Examples.ShadedWindowExample\">ShadedWindowExample</a>. To consider the additional heat input in case of ventilation with the solar protection the  <a href=\"vdi6007.BaseClasses.VentilationHeat\">VentilationHeat</a> model can be used.</p>
+<p> Additionaly to the <a href=\"Windows.Window\">Window</a> model it includes the formation of shades because of the window itself and because of the surrounding skyline.  </p>
+<p>An example on how this model should be used is  <a href=\"Windows.Examples.ShadedWindow\">ShadedWindow</a>. To consider the additional heat input in case of ventilation with the solar protection the  <a href=\"Windows.BaseClasses.VentilationHeat\">VentilationHeat</a> model can be used.</p>
   <h4>References</h4>
   <p>VDI. German Association of Engineers Guideline VDI 6007-3
   June 2015. Calculation of transient thermal response of rooms
@@ -5333,6 +5362,11 @@ This package contains models to compute solar heat gains.
 
   package UsersGuide "User's Guide"
       extends Modelica.Icons.Information;
+    annotation (Documentation(info="<html>
+<p>The Windows package contains the models to simulate transparent objects in building simulations. It is based on the modelling of solar radiation of VDI 6007. The upper models <a href=\"Windows.Window\">Window</a> and <a href=\"Windows.ShadedWindow\">ShadedWindow</a> calculate the entering solar energy into the room. They use the <a href=\"Windows.SolarGain.CorrectionGTaueDoublePane\">CorrectionGTaueDoublePane</a> to calculate correction values for non-vertical and non-parrallel irradiation. To respect the heat input  at closed sunscreen and open window the <a href=\"Windows.BaseClasses.VentilationHeat\">VentilationHeat</a><\\p> model can be used. The <a href=\"Windows.ShadedWindow\">ShadedWindow</a> additionally considers shading because of window projections through the <a href=\"Windows.BaseClasses.SelfShadowing\">SelfShadowing</a> model and shading because of surrounding buildings through the <a href=\"Windows.BaseClasses.SkylineShadowing\">SkylineShadowing</a>  model. The entering visible light is also calculated by the upper classes. It can be used to determine the switch moment of the lighting with the <a href=\"Windows.BaseClasses.Illumination\">Illumination</a> model. The information sections of the individual models give extra information on the calculations.<\\p> 
+<p>The <a href=\"Windows.Examples\">Examples</a> package contains examples on how the models should be integrated.<\\p>
+<p>The <a href=\"Windows.Validation\">Validation</a> is splitted in <a href=\"Windows.Validation.VDI2078\">VDI2078</a> and <a href=\"Windows.Validation.Shadowing\">Shadowing</a>. The <a href=\"Windows.BaseClasses.Illumination\">Illumination</a> and the <a href=\"Windows.BaseClasses.VentilationHeat\">VentilationHeat</a> model were tested with parts of test case 1 and parts of test case 3 of VDI2078.  <a href=\"Windows.SolarGain.CorrectionGTaueDoublePane\">CorrectionGTaueDoublePane</a> is tested within the test cases. The shadowing models are not included in the validation of VDI2078. Therfore the models were tested on plausibility with simple examples.<\\p>
+</html>"));
   end UsersGuide;
   annotation (Documentation(revisions="<html>
 <ul>
