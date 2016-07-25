@@ -67,7 +67,7 @@ equation
             100}}),
             graphics={
             Text(
-              visible = inputType == Annex60.Fluid.Types.InputType.Continuous,
+              visible=  inputType == Annex60.Fluid.Types.InputType.Continuous,
               extent={{10,124},{102,102}},
               textString="y [0, 1]"),
             Text(

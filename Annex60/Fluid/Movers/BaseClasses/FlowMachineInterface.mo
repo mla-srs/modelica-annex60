@@ -11,7 +11,8 @@ model FlowMachineInterface
       Placement(transformation(extent={{60,-80},{80,-60}})));
 
   parameter Annex60.Fluid.Movers.BaseClasses.Types.PrescribedVariable preVar=
-    Annex60.Fluid.Movers.BaseClasses.Types.PrescribedVariable.Speed "Type of prescribed variable";
+    Annex60.Fluid.Movers.BaseClasses.Types.PrescribedVariable.Speed
+    "Type of prescribed variable";
   parameter Boolean computePowerUsingSimilarityLaws
     "= true, compute power exactly, using similarity laws. Otherwise approximate.";
 

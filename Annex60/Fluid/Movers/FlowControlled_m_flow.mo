@@ -134,7 +134,7 @@ Revised implementation to allow zero flow rate.
 </html>"),
     Icon(graphics={
         Text(
-          visible = inputType == Annex60.Fluid.Types.InputType.Continuous,
+          visible=  inputType == Annex60.Fluid.Types.InputType.Continuous,
           extent={{22,146},{114,102}},
           textString="m_flow_in"),
         Line(

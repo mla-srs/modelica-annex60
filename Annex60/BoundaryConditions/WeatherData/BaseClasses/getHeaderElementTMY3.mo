@@ -41,7 +41,7 @@ algorithm
   for i in 1:position-1 loop
   nexInd :=Modelica.Utilities.Strings.find(
       string=lin,
-      searchString = ",",
+      searchString=  ",",
       startIndex=nexInd+1);
    assert(nexInd > 0, "Error when scanning weather file. Not enough tokens to find " + name + "."
          + "\n   Check for correct file syntax." + "\n   The scanned line is '" +
@@ -51,7 +51,7 @@ algorithm
   // Find the next delimiter
   nexInd :=Modelica.Utilities.Strings.find(
       string=lin,
-      searchString = ",",
+      searchString=  ",",
       startIndex=nexInd+1);
   assert(nexInd > 0, "Error when scanning weather file. Not enough tokens to find " + name + "."
          + "\n   Check for correct file syntax." + "\n   The scanned line is '" +
