@@ -270,40 +270,40 @@ The model considers additional heat input in the event of window ventilation and
       //Calculating s_h
       x1[i]=e_hn[i]*bLef[i]-dLef[i];
       x2[i]=-e_hn[i]*bRig[i]-dRig[i];
-      if e_hn[i]>=0 then
-        if x1[i]<0 then
+      if e_hn[i]>=0 then                          //Shadowing left
+        if x1[i]<0 then                             //No shadow
           s_h[i]=0;
-        elseif (e_hn[i]*bRig[i]+dRig[i])<0 then
+        elseif (e_hn[i]*bRig[i]+dRig[i])<0 then     //Additional shadow right
           s_h[i]=x1[i]-e_hn[i]*bRig[i]-dRig[i];
         else
-          s_h[i]=x1[i];
+          s_h[i]=x1[i];                             //Normal shadow left
         end if;
-      else
-        if x2[i]<0 then
+      else                                        //Shadowing right
+        if x2[i]<0 then                             //No shadow
           s_h[i]=0;
-        elseif (-e_hn[i]*bLef[i]+dLef[i])<0 then
+        elseif (-e_hn[i]*bLef[i]+dLef[i])<0 then    //Additional shadow left
           s_h[i]=x2[i]+e_hn[i]*bLef[i]-dLef[i];
-        else
+        else                                        //Normal shadow right
           s_h[i]=x2[i];
         end if;
       end if;
       //Calculating s_v
       x3[i]=e_vn[i]*bAbo[i]-dAbo[i];
       x4[i]=-e_vn[i]*bBel[i]-dBel[i];
-      if e_vn[i]>=0 then
-        if x3[i]<0 then
+      if e_vn[i]>=0 then                        //Shadowing above
+        if x3[i]<0 then                            //No shadow
           s_v[i]=0;
-        elseif (e_vn[i]*bBel[i]+dBel[i])<0 then
+        elseif (e_vn[i]*bBel[i]+dBel[i])<0 then    //Additional shadow below
           s_v[i]=x3[i]-e_hn[i]*bBel[i]-dBel[i];
-        else
+        else                                       //Normal shadow above
           s_v[i]=x3[i];
         end if;
-      else
-        if x4[i]<0 then
+      else                                      //Shadowing below
+        if x4[i]<0 then                            //No shadow
           s_v[i]=0;
-        elseif (-e_vn[i]*bAbo[i]+dAbo[i])<0 then
+        elseif (-e_vn[i]*bAbo[i]+dAbo[i])<0 then   //Additional shadow above
           s_v[i]=x4[i]-e_vn[i]*bAbo[i]-dAbo[i];
-        else
+        else                                       //Normal shadow below
           s_v[i]=x4[i];
         end if;
       end if;
@@ -320,7 +320,8 @@ The model considers additional heat input in the event of window ventilation and
       end for;
          annotation (defaultComponentName="selfShadowing",
          Icon(coordinateSystem(preserveAspectRatio=false), graphics={
-            Bitmap(extent={{-90,-98},{94,92}}, fileName="modelica://Annex60/Resources/Images/ThermalZones/ReducedOrder/Windows/BaseClasses/SelfShadowing.png")}),
+            Bitmap(extent={{-90,-98},{94,92}}, fileName=
+                  "modelica://Annex60/Resources/Images/ThermalZones/ReducedOrder/Windows/BaseClasses/SelfShadowing.png")}),
                                                                         Diagram(
             coordinateSystem(preserveAspectRatio=false)),
         Documentation(info="<html>
@@ -413,7 +414,7 @@ The model considers additional heat input in the event of window ventilation and
       Modelica.SIunits.EnergyFlowRate HVisSum "sum of HVisi";
 
     equation
-      //pick value for e_ILim
+      //Picking value for e_ILim
       if (time-integer(time/day)*day)>64800 or (time-integer(time/day)*day)<25200 or (office and time-integer(time/week)*week>432000) then
         e_ILim=0;
       elseif (time-integer(time/day)*day)>28800 and (time-integer(time/day)*day)<57600 then
@@ -421,7 +422,7 @@ The model considers additional heat input in the event of window ventilation and
       else
         e_ILim=e_ILim1;
       end if;
-      //calculating H_LimIns
+      //Calculating HLimVis
       for i in 1:n loop
         r_DifCov[i]=0.182*(1.178*(1+Modelica.Math.cos(to_surfaceTiltVDI(til[i])))+(pi-to_surfaceTiltVDI(til[i]))*
         Modelica.Math.cos(to_surfaceTiltVDI(til[i]))+Modelica.Math.sin(to_surfaceTiltVDI(til[i])));
@@ -432,11 +433,11 @@ The model considers additional heat input in the event of window ventilation and
       end for;
       HLimVis=sum(HLimVisi);
       HVisSum=sum(HVisi);
-      //comparing H_RoomL with H_LimIns
+      //comparing HVisSum with HLimVis
       Illumination = (HVisSum<HLimVis);
       annotation (Icon(coordinateSystem(preserveAspectRatio=false), graphics={
               Bitmap(extent={{-92,-102},{100,114}}, fileName=
-                  "modelica://Annex60/../../../vdi/Resources/Icons/Illumination.png")}),
+                  "modelica://Annex60/Resources/Images/ThermalZones/ReducedOrder/Windows/BaseClasses/Illumination.png")}),
                                                                      Diagram(
             coordinateSystem(preserveAspectRatio=false)),
         Documentation(revisions="<html>
@@ -774,7 +775,8 @@ The total solar energy entering the room, which can be calculated by <a href=\"W
         else
           g_Dirx[i]=g[i];
           g_Difx[i]=g[i];
-        end if;
+       end if;
+       //Calculating HWin
         HWin[i]=(HDirTil[i]*g_Dirx[i]*CorG_Dir[i]+HDifTilCov[i]*g_Difx[i]*CorG_DifCov[i]+HDifTilCle[i]*g_Difx[i]*CorG_DifCle[i]+0.5*rho*(1-Modelica.Math.cos(to_surfaceTiltVDI(til[i])))
           *(HDirNor*Modelica.Math.sin(alt)+HDifHor)*g_Difx[i]*CorG_Gro[i]);
       end for
