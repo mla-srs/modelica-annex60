@@ -878,7 +878,7 @@ The total solar energy entering the room, which can be calculated by <a href=\"W
         annotation (Placement(transformation(extent={{100,-50},{120,-30}}),
             iconTransformation(extent={{100,-50},{120,-30}})));
 
-      vdi6007.BaseClasses.Sunblind sunscreen[n](lim=lim)
+      vdi6007.BaseClasses.Sunblind sunblind[n](lim=lim)
         annotation (Placement(transformation(extent={{-68,-42},{-56,-30}})));
       vdi6007.SolarGain.CorrectionGTaueDoublePane CorGTaue(
         final n=n,
@@ -904,18 +904,18 @@ The total solar energy entering the room, which can be calculated by <a href=\"W
         annotation (Placement(transformation(extent={{54,-62},{100,-18}})));
 
     equation
-      connect(HDifTil, sunscreen.HDifTil) annotation (Line(points={{-112,0},{-92,0},
+      connect(HDifTil, sunblind.HDifTil) annotation (Line(points={{-112,0},{-92,0},
               {-92,-32.52},{-68.6,-32.52}},
                                           color={0,0,127}));
-      connect(HDirTil, sunscreen.HDirTil) annotation (Line(points={{-112,-80},{-81.5,
+      connect(HDirTil, sunblind.HDirTil) annotation (Line(points={{-112,-80},{-81.5,
               -80},{-81.5,-39.6},{-68.6,-39.6}},
                                                color={0,0,127}));
-      connect(sunscreen.sunscreen, CorGTaue.sunscreen) annotation (Line(points={{-55.4,
+      connect(sunblind.sunscreen, CorGTaue.sunscreen) annotation (Line(points={{-55.4,
               -36},{-38,-36},{-38,-10},{-28.8,-10}},
                                                 color={255,0,255}));
       connect(HVisible.HVis, HVis) annotation (Line(points={{102.2,40},{102.2,
               40},{110,40}}, color={0,0,127}));
-      connect(sunscreen.sunscreen, HVisible.sunscreen) annotation (Line(points=
+      connect(sunblind.sunscreen, HVisible.sunscreen) annotation (Line(points=
               {{-55.4,-36},{-38,-36},{-38,40.22},{54.46,40.22}}, color={255,0,
               255}));
       connect(CorGTaue.CorTaue_Dir, HVisible.CorTaue_Dir) annotation (Line(
@@ -947,7 +947,7 @@ The total solar energy entering the room, which can be calculated by <a href=\"W
 
       connect(HWindow.HWin, HWin) annotation (Line(points={{102.3,-40},{102.3,-40},
               {110,-40}}, color={0,0,127}));
-      connect(sunscreen.sunscreen, HWindow.sunscreen) annotation (Line(points={
+      connect(sunblind.sunscreen, HWindow.sunscreen) annotation (Line(points={
               {-55.4,-36},{-2,-36},{-2,-39.78},{52.39,-39.78}}, color={255,0,
               255}));
       connect(CorGTaue.CorG_Dir, HWindow.CorG_Dir) annotation (Line(points={{-7.2,
@@ -4519,7 +4519,8 @@ This package contains four tests for the <a href=\"Windows.BaseClasses.SelfShado
             lineColor={0,0,0},
             fillColor={0,0,0},
             fillPattern=FillPattern.Solid)}),                      Diagram(
-          coordinateSystem(preserveAspectRatio=false, extent={{-100,-100},{100,100}})),
+          coordinateSystem(preserveAspectRatio=false, extent={{-100,-100},{100,
+              100}}), graphics),
       Documentation(info="<html>
 <p>This model calculates the input of heat and visible light into the room due to solar irradiation. Therefore it uses the calculations of VDI 6007 part 3.  It considers  the correction values for non-vertical and non-parallel radiation incidence.</p>
 <p>To calculate the solar irradiation and the solar geometry it uses the models of the  <a href=\"Annex60.BoundaryConditions\">BoundaryConditions</a> package.</p>
