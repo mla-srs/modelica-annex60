@@ -5157,8 +5157,8 @@ This package contains base classes to calculate solar gain through windows.
           CorTaue_Gro[i]=CorTaue_DifCov[i];
           CorTaue_Dir[i]=CorTaue_DifCov[i];
           CorG_Dir[i]=CorG_DifCov[i];
-          CorG_DifCle[i]=CorG_DifCle[i];
-          CorG_Gro[i]=CorG_DifCle[i];
+          CorG_DifCle[i]=CorG_DifCov[i];
+          CorG_Gro[i]=CorG_DifCov[i];
          else
           CorTaue_DifCle[i]=tau_2DifCle[i]/taue_Dir0;
           CorTaue_Gro[i]=tau_2Gro[i]/taue_Dir0;
